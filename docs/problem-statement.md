@@ -1,5 +1,7 @@
 # Problem statement
 
+> **Scope note:** this is an **internal prototype** for a specific 4-person team (potentially rolling out to ~30 people if useful). The goal is to relieve real pain we're hitting today, not to ship a commercial product. We will throw the project away cheerfully if upstream tools absorb the use case.
+
 A small team (≈4 people) wants to share AI **skills** — natural-language instructions that guide coding agents — across the tools each person uses (Claude Code and Codex, in CLI / desktop / web / IDE forms). Today this is painful for five reasons.
 
 ## 1. No inventory
@@ -24,12 +26,12 @@ Some skills are fine to share publicly; others encode internal practice and must
 
 ## Intended outcome
 
-A Python CLI plus a small set of conventions that:
+A TypeScript CLI plus a small set of conventions, building on `rulesync` / `ai-rules-sync` for cross-tool fan-out, that:
 
 - Inventories skills across all known hosts on a machine.
 - Pushes/pulls skills to/from a git-backed marketplace (public or private).
-- Merges concurrent edits using a section-aware schema and an LLM-assisted three-way merge for same-section conflicts.
-- Bundles each skill with its MCP/tool dependencies via the existing Claude Code plugin format, with adapters that emit AGENTS.md fragments for non-Claude hosts.
+- Merges concurrent edits by handing `(base, ours, theirs)` to an LLM and asking the user to review the result. No section schema, no structured AST.
+- Bundles each skill with its MCP/tool dependencies via the existing Claude Code plugin format; AGENTS.md fan-out is delegated to the substrate.
 - Refuses to leak `proprietary` skills to public remotes.
 
-V1 is intentionally small. We ship in increments a 4-person team can actually use and react to.
+V1 is intentionally small. We ship in increments a 4-person team can actually use and react to. Anything that doesn't address one of the five pains above is out of scope until the pilot says otherwise.

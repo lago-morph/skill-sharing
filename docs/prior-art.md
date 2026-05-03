@@ -17,10 +17,12 @@ Snapshot from research conducted May 2026 across two passes (Claude Code documen
 
 ## Direct competitors (closest existing tools)
 
-| Tool | Scope | Maturity | Gap vs. our design |
+> **Note:** since the deep-research review, we treat `rulesync` / `ai-rules-sync` as **substrate** rather than competitors — see [decisions.md](./decisions.md) Decision 2. We delegate cross-tool fan-out and AGENTS.md export to them and only build the inventory + visibility + merge layer on top.
+
+| Tool | Scope | Maturity | Role for us |
 |---|---|---|---|
-| [`rulesync`](https://github.com/dyoshikawa/rulesync) (Node) | Fan-out one source to many tools | Mature-ish | No overlays, no prose merge, no proprietary/public split |
-| [`ai-rules-sync`](https://github.com/lbb00/ai-rules-sync) (Node) | Similar to rulesync, privacy-first | Mature-ish | Same gaps |
+| [`rulesync`](https://github.com/dyoshikawa/rulesync) (Node) | Fan-out one source to many tools (rules, commands, MCP, ignore-files, subagents, skills) | Mature-ish | **Substrate candidate** — handles AGENTS.md export and multi-tool sync |
+| [`ai-rules-sync`](https://github.com/lbb00/ai-rules-sync) (Node) | Similar to rulesync, plus multi-repository composition and symlink-based sync | Mature-ish | **Substrate candidate** — multi-repo model maps better to our marketplace concept |
 | [`skillshare`](https://github.com/runkids/skillshare) | Skill sharing | Newer / experimental | Unclear |
 | `ai-nexus` | Agent ecosystem | Experimental | Unclear |
 | [`anthropics/skills`](https://github.com/anthropics/skills), [`anthropics/claude-plugins-official`](https://github.com/anthropics/claude-plugins-official) | Official Anthropic catalogs | Stable | Passive content; not a sync tool |
@@ -49,19 +51,19 @@ Curation-only resources: `wshobson/agents` (148+ skills, 960k+ installs), `aweso
 
 ## Where this tool earns its keep
 
-1. **Overlay model on top of AGENTS.md + SKILL.md.** chezmoi-style base + per-host/per-tool/per-team layers. None of the rulesync-class tools do this.
-2. **Section-aware + LLM 3-way merge for prose.** Mergiraf and Weave target code; nobody targets skill prose specifically.
-3. **Standalone transcript → SKILL.md.** Fills a real gap (stretch goal).
-4. **Cross-marketplace install with a lockfile.** Pin sources across Claude Code plugins, Cursor plugins, Continue Hub, raw GitHub Skills repos. Cargo/npm-style resolution is open territory (stretch).
+Scoped down for the prototype — overlays, transcript→skill, and lockfiles are now stretch only.
 
-## Python libraries we'll use
+1. **Inventory across hosts.** `rulesync` / `ai-rules-sync` are authoring tools; neither surveys what's actually on a machine. `skillctl list` is the smallest piece of net-new value.
+2. **Visibility guard** (`public | proprietary` pre-push check). Small, but no comparable tool ships it.
+3. **LLM 3-way merge driver wired to git via `.gitattributes`.** Existing approaches are DIY shell wrappers; making this a turnkey thing for SKILL.md files is a real gap-fill — and we do it without a section schema, just `(base, ours, theirs)` → LLM → reviewed candidate.
+4. **(Stretch)** Overlay model and standalone transcript → SKILL.md remain interesting research areas, but we don't commit to them in v1.
+
+## TypeScript libraries we'll use
 
 | Library | Purpose |
 |---|---|
-| [`python-frontmatter`](https://pypi.org/project/python-frontmatter/) | Frontmatter parse/serialize |
-| [`marko`](https://github.com/frostming/marko) | CommonMark-correct AST; section splitting |
-| [`merge3`](https://github.com/breezy-team/merge3) | Three-way merge primitive (line-level fallback) |
-| [`GitPython`](https://github.com/gitpython-developers/GitPython) | Git ops via subprocess wrapper |
-| [`anthropic`](https://github.com/anthropics/anthropic-sdk-python) | LLM merge driver and generators (prompt caching on) |
-| [`typer`](https://typer.tiangolo.com/) | CLI |
-| [`claude-agent-sdk-python`](https://github.com/anthropics/claude-agent-sdk-python) | Optional, if iter-3 LLM merge or stretch transcript→skill needs richer agent loops |
+| [`@anthropic-ai/sdk`](https://github.com/anthropics/anthropic-sdk-typescript) | LLM merge driver (prompt caching on) |
+| [`gray-matter`](https://github.com/jonschlinkert/gray-matter) | Frontmatter parse/serialize |
+| [`simple-git`](https://github.com/steveukx/git-js) | Git ops |
+| [`commander`](https://github.com/tj/commander.js) | CLI |
+| [`rulesync`](https://github.com/dyoshikawa/rulesync) or [`ai-rules-sync`](https://github.com/lbb00/ai-rules-sync) | Peer dep — multi-tool fan-out, AGENTS.md export |

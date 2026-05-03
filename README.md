@@ -8,18 +8,22 @@ This repo is currently in the **design phase**. No code yet.
 
 ## Documents
 
-### Planning
+### Planning (in scope)
 
-- [`docs/problem-statement.md`](docs/problem-statement.md) — the five concrete pains we're solving.
+- [`docs/problem-statement.md`](docs/problem-statement.md) — the five concrete pains we're solving (pain 5 deferred for the pilot).
 - [`docs/decisions.md`](docs/decisions.md) — locked-in design decisions with rationale.
 - [`docs/iteration-plan.md`](docs/iteration-plan.md) — four iterations sized for a 4-person team, each independently shippable; throwaway-ready.
-- [`docs/skill-schema.md`](docs/skill-schema.md) — minimal SKILL.md format: agentskills.io unchanged plus one `visibility:` frontmatter key.
+- [`docs/skill-schema.md`](docs/skill-schema.md) — minimal SKILL.md format: agentskills.io unchanged, no extensions for the prototype.
 - [`docs/prior-art.md`](docs/prior-art.md) — landscape: what exists, what we build on, where this earns its keep.
+
+### Deferred (out of scope unless pilot demands)
+
+- [`docs/consider-for-later.md`](docs/consider-for-later.md) — features and ambitions parked until the pilot justifies them. **Read the warning at the top before pulling anything from this list back into scope.**
 
 ### Substrate evaluations
 
-- [`docs/rulesync-evaluation.md`](docs/rulesync-evaluation.md) — `rulesync` capabilities and fit as a peer-dependency substrate.
-- [`docs/ai-rules-sync-evaluation.md`](docs/ai-rules-sync-evaluation.md) — `ai-rules-sync` capabilities and fit as a peer-dependency substrate.
+- [`docs/rulesync-evaluation.md`](docs/rulesync-evaluation.md) — `rulesync` capabilities and fit. **Adopted as substrate.**
+- [`docs/ai-rules-sync-evaluation.md`](docs/ai-rules-sync-evaluation.md) — `ai-rules-sync` capabilities and fit. **Evaluated and rejected.**
 
 ### Research
 

@@ -1,8 +1,12 @@
 # rulesync evaluation
 
+> **Status: adopted as substrate.** See [decisions.md](./decisions.md) row 2.
+>
+> **Note for current planning.** This evaluation was written when `visibility:` frontmatter was an active design feature. It has since been deferred to [consider-for-later.md](./consider-for-later.md) — the pilot uses only private repositories. Any references below to a `visibility:` test in iter-0 should be read as relevant *if and when* visibility is revived. The architectural recommendations (wrap rulesync behind `src/substrate.ts`, treat its frontmatter schema as foreign, plan for swap-out) still apply.
+
 > **Question:** can [`rulesync`](https://github.com/dyoshikawa/rulesync) be the substrate for `skillctl`, or do we need to keep it at arm's length?
 >
-> **Headline recommendation:** **Adopt as substrate, but only for what it already does well — fan-out, fetch, and AGENTS.md export.** Keep our skill bundle, visibility frontmatter, inventory, and merge driver outside `rulesync` so the day it pivots or removes our use case we can swap it without unwinding our schema.
+> **Headline recommendation:** **Adopt as substrate, but only for what it already does well — fan-out, fetch, and AGENTS.md export.** Keep our skill bundle, inventory, and merge driver outside `rulesync` so the day it pivots or removes our use case we can swap it without unwinding our schema.
 
 Sources cited inline. Researched against rulesync `8.15.0` (published 2026-05-01).
 

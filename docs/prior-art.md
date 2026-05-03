@@ -17,12 +17,12 @@ Snapshot from research conducted May 2026 across two passes (Claude Code documen
 
 ## Direct competitors (closest existing tools)
 
-> **Note:** since the deep-research review, we treat `rulesync` / `ai-rules-sync` as **substrate** rather than competitors — see [decisions.md](./decisions.md) Decision 2. We delegate cross-tool fan-out and AGENTS.md export to them and only build the inventory + visibility + merge layer on top.
+> **Note:** after evaluation we adopted `rulesync` as substrate and rejected `ai-rules-sync`. See [decisions.md](./decisions.md) Decision 2, [rulesync-evaluation.md](./rulesync-evaluation.md), and [ai-rules-sync-evaluation.md](./ai-rules-sync-evaluation.md). We delegate cross-tool fan-out and AGENTS.md export to rulesync and only build the inventory + remote-listing + merge layer on top.
 
 | Tool | Scope | Maturity | Role for us |
 |---|---|---|---|
-| [`rulesync`](https://github.com/dyoshikawa/rulesync) (Node) | Fan-out one source to many tools (rules, commands, MCP, ignore-files, subagents, skills) | Mature-ish | **Substrate candidate** — handles AGENTS.md export and multi-tool sync |
-| [`ai-rules-sync`](https://github.com/lbb00/ai-rules-sync) (Node) | Similar to rulesync, plus multi-repository composition and symlink-based sync | Mature-ish | **Substrate candidate** — multi-repo model maps better to our marketplace concept |
+| [`rulesync`](https://github.com/dyoshikawa/rulesync) (Node) | Fan-out one source to many tools (rules, commands, MCP, ignore-files, subagents, skills) | Mature-ish | **Substrate (adopted).** Wrapped behind `src/substrate.ts`. |
+| [`ai-rules-sync`](https://github.com/lbb00/ai-rules-sync) (Node) | Symlink-based multi-repo composition | Pre-1.0, idle since 2026-03 | **Evaluated and rejected.** No Node API, single maintainer, dormant. |
 | [`skillshare`](https://github.com/runkids/skillshare) | Skill sharing | Newer / experimental | Unclear |
 | `ai-nexus` | Agent ecosystem | Experimental | Unclear |
 | [`anthropics/skills`](https://github.com/anthropics/skills), [`anthropics/claude-plugins-official`](https://github.com/anthropics/claude-plugins-official) | Official Anthropic catalogs | Stable | Passive content; not a sync tool |
@@ -51,12 +51,12 @@ Curation-only resources: `wshobson/agents` (148+ skills, 960k+ installs), `aweso
 
 ## Where this tool earns its keep
 
-Scoped down for the prototype — overlays, transcript→skill, and lockfiles are now stretch only.
+Scoped down for the prototype. Overlays, transcript→skill, lockfiles, visibility guards, and provenance metadata are all parked in [consider-for-later.md](./consider-for-later.md).
 
-1. **Inventory across hosts.** `rulesync` / `ai-rules-sync` are authoring tools; neither surveys what's actually on a machine. `skillctl list` is the smallest piece of net-new value.
-2. **Visibility guard** (`public | proprietary` pre-push check). Small, but no comparable tool ships it.
+1. **Inventory across hosts.** rulesync is an authoring tool; it doesn't survey what's on a machine. `skillctl list` is the smallest piece of net-new value.
+2. **Remote inventory** (`skillctl ls <marketplace>`). Counterpart to `skillctl list`. Tells the team what's available without inspecting `marketplace.json` by hand.
 3. **LLM 3-way merge driver wired to git via `.gitattributes`.** Existing approaches are DIY shell wrappers; making this a turnkey thing for SKILL.md files is a real gap-fill — and we do it without a section schema, just `(base, ours, theirs)` → LLM → reviewed candidate.
-4. **(Stretch)** Overlay model and standalone transcript → SKILL.md remain interesting research areas, but we don't commit to them in v1.
+4. **(Deferred)** Overlay model, transcript → SKILL.md, visibility guard, lockfile, etc. — see [consider-for-later.md](./consider-for-later.md).
 
 ## TypeScript libraries we'll use
 
@@ -66,4 +66,4 @@ Scoped down for the prototype — overlays, transcript→skill, and lockfiles ar
 | [`gray-matter`](https://github.com/jonschlinkert/gray-matter) | Frontmatter parse/serialize |
 | [`simple-git`](https://github.com/steveukx/git-js) | Git ops |
 | [`commander`](https://github.com/tj/commander.js) | CLI |
-| [`rulesync`](https://github.com/dyoshikawa/rulesync) or [`ai-rules-sync`](https://github.com/lbb00/ai-rules-sync) | Peer dep — multi-tool fan-out, AGENTS.md export |
+| [`rulesync`](https://github.com/dyoshikawa/rulesync) | Multi-tool fan-out, AGENTS.md export (wrapped behind `src/substrate.ts`) |

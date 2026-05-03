@@ -1,6 +1,8 @@
 # ai-rules-sync evaluation
 
-> **Verdict up front.** Use it selectively, do not depend on it as substrate. Its multi-repository composition is a real fit for the "private + public marketplace" model, but it is symlink-based, CLI-only (no documented Node API), young (started 2025-12-25, 27 stars, single maintainer), and idle for ~7 weeks as of evaluation. Treat it as a peer tool we recommend to teammates, not a library we wire into `skillctl`.
+> **Status: not adopted.** This evaluation informed [decisions.md](./decisions.md) row 2: rulesync is the substrate; ai-rules-sync is not. Document retained for the rationale and for future re-evaluation if the project matures.
+
+> **Verdict up front.** Use it selectively, do not depend on it as substrate. Its multi-repository composition is a real fit for the "private + public marketplace" model (now itself parked — see [consider-for-later.md](./consider-for-later.md)), but it is symlink-based, CLI-only (no documented Node API), young (started 2025-12-25, 27 stars, single maintainer), and idle for ~7 weeks as of evaluation. Treat it as a peer tool we recommend to teammates, not a library we wire into `skillctl`.
 
 Evaluated against v0.8.1 (npm published 2026-03-11, last commit 2026-03-16, evaluated 2026-05-03). Sources: the GitHub repo at [github.com/lbb00/ai-rules-sync](https://github.com/lbb00/ai-rules-sync), npm registry metadata at [registry.npmjs.org/ai-rules-sync](https://registry.npmjs.org/ai-rules-sync), and the project docs at [lbb00.github.io/ai-rules-sync](https://lbb00.github.io/ai-rules-sync/) (mirrored in the repo under `docs/`).
 

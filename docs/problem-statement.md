@@ -24,14 +24,16 @@ Many skills depend on MCP servers, tools, or slash commands. Sharing the SKILL.m
 
 Some skills are fine to share publicly; others encode internal practice and must not leak. Today nothing prevents an accidental push to a public remote.
 
+> **Deferred for the pilot.** The pilot uses only private repositories, so this pain is sidestepped rather than solved. The visibility model and pre-push guard are parked in [`consider-for-later.md`](./consider-for-later.md), to be revived if the team starts publishing to a public surface.
+
 ## Intended outcome
 
-A TypeScript CLI plus a small set of conventions, building on `rulesync` / `ai-rules-sync` for cross-tool fan-out, that:
+A TypeScript CLI plus a small set of conventions, building on `rulesync` for cross-tool fan-out, that:
 
-- Inventories skills across all known hosts on a machine.
-- Pushes/pulls skills to/from a git-backed marketplace (public or private).
+- Inventories skills across all known hosts on a machine (`skillctl list`).
+- Lists what's available in a private git-backed marketplace (`skillctl ls <marketplace>`).
+- Pulls/pushes skills to/from that marketplace.
 - Merges concurrent edits by handing `(base, ours, theirs)` to an LLM and asking the user to review the result. No section schema, no structured AST.
-- Bundles each skill with its MCP/tool dependencies via the existing Claude Code plugin format; AGENTS.md fan-out is delegated to the substrate.
-- Refuses to leak `proprietary` skills to public remotes.
+- Bundles each skill with its MCP/tool dependencies via the existing Claude Code plugin format; AGENTS.md fan-out is delegated to rulesync.
 
-V1 is intentionally small. We ship in increments a 4-person team can actually use and react to. Anything that doesn't address one of the five pains above is out of scope until the pilot says otherwise.
+V1 is intentionally small. We ship in increments a 4-person team can actually use and react to. Anything that doesn't address pains 1–4 above is out of scope; pain 5 is deferred — see [`consider-for-later.md`](./consider-for-later.md).

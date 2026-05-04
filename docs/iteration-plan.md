@@ -104,12 +104,97 @@ skill-sharing/
 
 ## Verification plan
 
-- **Iter 0:** `pytest` covers schema parser; team reads `skill-schema.md`, gives feedback.
-- **Iter 1:** every team member runs `skillctl list` on their machine; we confirm coverage matches reality (any missing path is a bug).
-- **Iter 2:** stand up `team-skills-public` and `team-skills-private` repos; round-trip a real skill end-to-end. Verify the visibility guard refuses a deliberate proprietary-to-public push.
-- **Iter 3:** seed a real conflict (two team members edit the same skill differently), run `skillctl merge`, hand the result to a third reviewer who wasn't involved in the edits — they should be able to adjudicate quickly.
-- **Iter 4:** a Codex-only user pulls a skill and confirms Codex picks up the resulting AGENTS.md.
-- **Iter 5:** a user customizes a shared skill via overlay, then pulls a base update; their overlay is preserved and the merged result behaves as expected in Claude Code.
+Each iteration ends with two complementary checks:
+
+1. **pytest** — automated unit/integration tests that run in CI.
+2. **Sandbox smoke test** — Claude exercises the CLI end-to-end in the dev
+   environment, creates real fixture files, and confirms the golden path and
+   key edge cases behave correctly. Results are recorded below as each
+   iteration is completed.
+
+### Iter 0 — Schema parser
+
+*pytest:* schema parser round-trips, section-ID extraction, edge cases.
+
+*Sandbox smoke test:*
+- Parse both `examples/` skills via the Python API; print name, visibility,
+  section headings.
+- Verify `skillctl --help`, `skillctl list` (stub), and `skillctl show` (stub)
+  exit cleanly.
+- Confirm `dump_skill(parse_skill(text)) == parse_skill(dump_skill(…))` holds
+  on both example files (idempotent round-trip).
+
+### Iter 1 — `skillctl list` / `skillctl show`
+
+*pytest:* inventory walker finds skills at mocked paths; missing dirs are
+skipped cleanly; `show` renders correct output.
+
+*Sandbox smoke test:*
+- Plant a skill file at `~/.claude/skills/test-skill/SKILL.md` and one at
+  `.claude/skills/project-skill/SKILL.md` in a temp project dir.
+- Run `skillctl list`; verify both rows appear with correct host, scope, and
+  visibility columns.
+- Run `skillctl show test-skill`; verify full frontmatter + body is printed.
+- Remove the planted files; confirm `skillctl list` shows an empty table
+  rather than crashing.
+
+### Iter 2 — `skillctl push` / `skillctl pull`
+
+*pytest:* marketplace.json IO, visibility guard logic, overwrite-abort
+message, happy-path copy.
+
+*Sandbox smoke test:*
+- `git init` a temp dir as a public marketplace (set `marketplace.visibility:
+  public` in `marketplace.json`).
+- Push `examples/public-skill` to it; confirm the plugin tree and updated
+  `marketplace.json` are committed in the marketplace repo.
+- Pull it back to a fresh location; confirm the skill file appears.
+- Attempt to push `examples/proprietary-skill` to the public marketplace;
+  confirm the guard refuses with a clear error.
+- Attempt a second pull to the same location (overwrite scenario); confirm
+  the abort message fires.
+
+### Iter 3 — Section-aware diff + LLM 3-way merge
+
+*pytest:* section diff identifies correct changed sections; same-side-only
+changes are auto-resolved; both-sides conflicts route to `llm.merge` (mocked
+in tests).
+
+*Sandbox smoke test:*
+- Create a base skill and two diverged variants (edit `## Procedure` in one,
+  `## Examples` in the other; edit `## Purpose` in both).
+- Run `skillctl diff`; confirm output shows only the changed sections.
+- Run `skillctl merge`; confirm `## Procedure` and `## Examples` are
+  auto-resolved and only `## Purpose` is handed to Claude for a merge
+  candidate.
+- Inspect the `.merged.md` output for coherence.
+
+### Iter 4 — AGENTS.md export
+
+*pytest:* Claude-specific frontmatter keys stripped; sections flattened to
+prose; output is valid markdown.
+
+*Sandbox smoke test:*
+- Export both example skills with `skillctl export --as agents-md`.
+- Confirm `allowed-tools`, `visibility`, `depends_on`, `origin` are absent
+  from the output.
+- Confirm section headings are rendered as prose paragraphs (no H2s with
+  schema names).
+- Copy the output into a temp `AGENTS.md` in a fresh dir; confirm a
+  `skillctl list` run with the Codex host adapter picks it up.
+
+### Iter 5 — Base + overlay composition
+
+*pytest:* overlay `replace`/`append`/`disable` directives applied correctly;
+base update preserves overlay; materialize output matches expectation.
+
+*Sandbox smoke test:*
+- Pull a base skill; write an overlay that replaces `## Procedure` and
+  appends to `## When to use`.
+- Run `skillctl materialize`; confirm the output contains the replaced
+  procedure and the appended when-to-use, with all other sections from base.
+- Simulate a base update (edit base file); re-materialize; confirm overlay
+  still applies and the updated base sections flow through.
 
 ## Open questions (recommendations, to be re-confirmed at each iteration boundary)
 

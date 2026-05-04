@@ -147,6 +147,25 @@ class TestParseSkill:
         for s in skill.sections:
             assert s.id is None
 
+    def test_h2_inside_fenced_code_block_not_parsed_as_section(self):
+        text = textwrap.dedent("""\
+            ## Purpose
+
+            See the example below.
+
+            ## Examples
+
+            ```markdown
+            ## This Heading Is Inside A Code Fence
+            ```
+
+            Plain text after fence.
+            """)
+        skill = parse_skill(text)
+        headings = [s.heading for s in skill.sections]
+        assert "This Heading Is Inside A Code Fence" not in headings
+        assert headings == ["Purpose", "Examples"]
+
 
 class TestDumpSkill:
     def test_roundtrip_minimal(self):

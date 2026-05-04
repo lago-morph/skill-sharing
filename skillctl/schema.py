@@ -74,10 +74,14 @@ def _parse_sections(body: str) -> list[Section]:
     current_heading: Optional[str] = None
     current_id: Optional[str] = None
     current_lines: list[str] = []
+    in_fence = False
 
     for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
         m = _H2_RE.match(line)
-        if m:
+        if m and not in_fence:
             if current_heading is not None:
                 sections.append(
                     Section(

@@ -1,5 +1,7 @@
 # Problem statement
 
+> **Scope note:** this is an **internal prototype** for a specific 4-person team (potentially rolling out to ~30 people if useful). The goal is to relieve real pain we're hitting today, not to ship a commercial product. We will throw the project away cheerfully if upstream tools absorb the use case.
+
 A small team (≈4 people) wants to share AI **skills** — natural-language instructions that guide coding agents — across the tools each person uses (Claude Code and Codex, in CLI / desktop / web / IDE forms). Today this is painful for five reasons.
 
 ## 1. No inventory
@@ -22,14 +24,16 @@ Many skills depend on MCP servers, tools, or slash commands. Sharing the SKILL.m
 
 Some skills are fine to share publicly; others encode internal practice and must not leak. Today nothing prevents an accidental push to a public remote.
 
+> **Deferred for the pilot.** The pilot uses only private repositories, so this pain is sidestepped rather than solved. The visibility model and pre-push guard are parked in [`consider-for-later.md`](./consider-for-later.md), to be revived if the team starts publishing to a public surface.
+
 ## Intended outcome
 
-A Python CLI plus a small set of conventions that:
+A TypeScript CLI plus a small set of conventions, building on `rulesync` for cross-tool fan-out, that:
 
-- Inventories skills across all known hosts on a machine.
-- Pushes/pulls skills to/from a git-backed marketplace (public or private).
-- Merges concurrent edits using a section-aware schema and an LLM-assisted three-way merge for same-section conflicts.
-- Bundles each skill with its MCP/tool dependencies via the existing Claude Code plugin format, with adapters that emit AGENTS.md fragments for non-Claude hosts.
-- Refuses to leak `proprietary` skills to public remotes.
+- Inventories Codex skills on a machine (`skillctl list`).
+- Lists what's available in a private git-backed marketplace (`skillctl ls <marketplace>`).
+- Pulls/pushes skills to/from that marketplace.
+- Merges concurrent edits by handing `(base, ours, theirs)` to an LLM and asking the user to review the result. No section schema, no structured AST.
+- Bundles each skill with its MCP/tool dependencies via the existing Claude Code plugin format (used as a metadata convention; Codex doesn't read it); AGENTS.md and other-tool fan-out are delegated to rulesync.
 
-V1 is intentionally small. We ship in increments a 4-person team can actually use and react to.
+V1 is intentionally small. **The prototype targets Codex CLI only**; Claude Code and other tools are deferred — see [`consider-for-later.md`](./consider-for-later.md). We ship in increments a 4-person team can actually use and react to. Anything that doesn't address pains 1–4 above is out of scope; pain 5 is also deferred.

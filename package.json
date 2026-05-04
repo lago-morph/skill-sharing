@@ -1,0 +1,27 @@
+{
+  "name": "skillctl",
+  "version": "0.1.0",
+  "description": "Inventory, share, and merge AI agent skills across a small team.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "skillctl": "./dist/cli.js" },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "smoke": "tsx scripts/smoke.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.26",
+    "commander": "^12",
+    "gray-matter": "^4",
+    "rulesync": "^8.15",
+    "simple-git": "^3"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vitest": "^2"
+  }
+}

@@ -1,73 +1,124 @@
 # Iteration plan
 
-Each iteration is independently shippable and produces something the team can try. After every iteration: 30-min team retro → next iteration's scope.
+> **This is a prototype**, not a product. We're solving a specific 4-person team's pain. Each iteration is independently shippable and disposable — if a better tool ships upstream mid-flight, we abandon and adopt. After every iteration: 30-min team retro → next iteration's scope.
+>
+> **Initial scope: Codex CLI only.** Claude Code and other tools are deferred — see [`consider-for-later.md`](./consider-for-later.md). rulesync supports them, so adding more is mostly a `--targets` config change in `src/substrate.ts` and a few extra paths in `hosts.ts`.
+>
+> See [`consider-for-later.md`](./consider-for-later.md) for parked features. **Anything in that document is out of scope** unless the pilot's lived experience justifies pulling it back in.
 
 See [problem-statement.md](./problem-statement.md) for context and [decisions.md](./decisions.md) for the design choices framing this plan.
 
-## Iteration 0 — Repo + skill conventions (½ day)
+## Iteration 0 — Repo + scaffolding (½ day)
 
-- Lay down repo skeleton: `skillctl/` (Python package), `tests/`, `docs/`, `examples/`.
-- Define the **section schema** for skills (frontmatter + named H2 sections: `## Purpose`, `## When to use`, `## Procedure`, `## Examples`, `## References`, `## Anti-patterns`). Every section optional except `Purpose` and `When to use`. See [skill-schema.md](./skill-schema.md).
-- Add `visibility: public | proprietary` to the frontmatter (extension on top of Claude Code's frontmatter — Claude Code ignores unknown keys).
-- Two example skills committed under `examples/` in the canonical schema.
+- TypeScript project skeleton: `src/`, `test/`, `examples/`, `package.json`, `tsconfig.json`.
+- Add `rulesync` as a regular dependency (pinned `^8.15`). Wrap calls behind one `src/substrate.ts` so we can swap it out later. See [rulesync-evaluation.md](./rulesync-evaluation.md).
+- Two example skills under `examples/` in vanilla agentskills.io SKILL.md format. No frontmatter extensions, no schema beyond what agentskills.io defines. See [skill-schema.md](./skill-schema.md).
+- `npm run smoke` script: copies an example skill into a temp `.rulesync/skills/` and runs `rulesync generate --features skills --targets codexcli` so a teammate can confirm the substrate works end-to-end with one command.
 
-**Deliverable:** repo + a one-page `skill-schema.md`. Team reviews schema, pushes back, we revise.
+**Deliverable:** working repo, two examples, confirmed rulesync round-trip into Codex layout. Team eyeballs it before we go further.
+
+### Try it out
+
+```bash
+git clone <repo-url> && cd skill-sharing
+npm install
+npm run smoke           # copies an example into .rulesync/, runs rulesync
+ls .codex/skills/       # the example skill should appear here
+```
 
 ## Iteration 1 — `skillctl list` (1–2 days)
 
-- `skillctl list` walks every known location on the machine and prints a table: name, host (claude-code | codex | …), scope (user | project | plugin), path, visibility, last-modified.
+- `skillctl list` walks every known Codex skill location on the machine and prints a table: name, scope (user | project), path, last-modified.
 - `skillctl show <name>` prints the resolved skill (frontmatter + body).
-- Detection paths come from a small `hosts.py` registry; one entry per supported host. Start with Claude Code (3 paths) and Codex (`AGENTS.md` discovery in cwd / parents / `~/.codex/`).
-- No network. No writes. Pure inventory.
+- `hosts.ts` registry has one entry for the prototype: Codex CLI (`./.codex/skills/`, `~/.codex/skills/`). Other tools added when their support lands; see [consider-for-later.md](./consider-for-later.md).
+- No network. No writes. Pure inventory of what's on the user's machine.
 
-**Deliverable:** `pip install -e .` then `skillctl list`. Team uses it on their own machines. Tells us whether path coverage is right and whether the table is the right surface.
+**Deliverable:** `npm install -g .` (or `npm link`) then `skillctl list`. Team uses it on their own machines. Tells us whether path coverage is right and whether inventory is the most useful primitive — or whether they jump straight past it to sharing.
 
-## Iteration 2 — `skillctl push` / `skillctl pull` against a git marketplace (3–4 days)
+### Try it out
 
-- A "marketplace" is just a git repo with a `.claude-plugin/marketplace.json` and a `plugins/` tree. We use the existing schema unchanged.
-- `skillctl push <skill> --to <marketplace>`: copies the skill (and any sibling files referenced by frontmatter `paths`/`context`) into the marketplace repo as a one-skill plugin, updates `marketplace.json`, commits, pushes.
-- `skillctl pull <skill>@<marketplace>`: clones/updates the marketplace, copies the skill into `~/.claude/skills/` (or installs as a plugin via `/plugin` instructions if the user prefers).
-- **Visibility guard:** before pushing, check the skill's `visibility:` against a `marketplace.visibility` declared in the marketplace's `marketplace.json`. Refuse `proprietary → public`.
-- No merging yet. If `pull` would overwrite a locally-edited skill, abort with a clear message.
+```bash
+cd skill-sharing && npm install && npm link
+mkdir -p ~/.codex/skills/demo-skill
+cat > ~/.codex/skills/demo-skill/SKILL.md <<'EOF'
+---
+name: demo-skill
+description: Demo skill for trying skillctl list.
+---
+Body.
+EOF
+skillctl list                  # demo-skill should appear, scope=user
+skillctl show demo-skill       # frontmatter + body
+```
 
-**Deliverable:** the team can stand up one private and one public marketplace repo and exchange skills. Tells us whether plugin format is the right unit of sharing or whether we need a leaner "bare skill" format.
+## Iteration 2 — `skillctl ls` / `pull` / `push` against a private git marketplace (3–4 days)
 
-## Iteration 3 — Section-aware diff + LLM 3-way merge (3–5 days)
+- A "marketplace" is just a git repo with a `.claude-plugin/marketplace.json` and a `plugins/` tree. We use the existing schema unchanged (it's a metadata convention; Codex doesn't read it). **Single private repo for the pilot** — see [decisions.md](./decisions.md) row 5.
+- `skillctl ls <marketplace>` clones/updates the marketplace and lists what's available: skill name, description, last-modified. The remote-side counterpart to `skillctl list`.
+- `skillctl pull <skill>@<marketplace>` clones/updates the marketplace, copies the skill into a temp `.rulesync/skills/<name>/`, and calls rulesync to fan out to Codex layout (`~/.codex/skills/<name>/`).
+- `skillctl push <skill> --to <marketplace>` copies the skill (and any sibling files referenced by frontmatter `paths`/`context`) into the marketplace repo as a one-skill plugin, updates `marketplace.json`, commits, pushes.
+- No merging yet. If `pull` would overwrite a locally edited skill, abort with a clear message.
+- **No visibility guard, no public/private split.** All marketplaces are treated as private. The visibility design is parked in [consider-for-later.md](./consider-for-later.md).
 
-- `skillctl diff <skill> [--against <marketplace>]`: structural diff that shows which sections changed, not raw line diff.
-- `skillctl merge <skill>`: when local and remote both changed the same skill from a common base, do a section-by-section merge:
-  - Sections changed on only one side → take that side.
-  - Sections changed on both sides → invoke Claude (`anthropic` SDK, prompt-cached) with `(base, ours, theirs)` and produce a merge candidate; write to `<skill>.merged.md` for the user to review.
-- Optional: register as a custom git merge driver via `.gitattributes` so `git merge` calls into us automatically when merging marketplace pulls.
-- Add `skillctl pull --merge` to chain pull + merge.
+**Deliverable:** team stands up `team-skills` (private) and round-trips a real skill end-to-end. Tells us whether plugin format is the right unit of sharing or whether a leaner "bare skill" form is needed, and whether `skillctl ls` is the right discovery surface.
 
-**Deliverable:** real concurrent-edit story. Tells us whether the section schema holds up and whether LLM-merge output quality is acceptable, or whether we need to tighten the schema (e.g. stable section IDs).
+### Try it out
 
-## Iteration 4 — AGENTS.md export (2–3 days)
+```bash
+# One-time: stand up an empty private marketplace repo
+gh repo create your-org/team-skills --private --clone
+cd team-skills && mkdir -p .claude-plugin plugins
+echo '{"name":"team-skills","plugins":[]}' > .claude-plugin/marketplace.json
+git add . && git commit -m init && git push -u origin main && cd ..
 
-- `skillctl export <skill> --as agents-md`: render a skill into an AGENTS.md fragment (drop Claude-specific frontmatter, flatten sections to plain prose).
-- `skillctl install <skill> --host codex` (and `--host cursor`, `--host aider`, etc.): write the AGENTS.md output into the right location for that host.
-- Round-trip: `skillctl pull` for an AGENTS.md-consuming host installs the skill as AGENTS.md content; for a Claude Code user installs as SKILL.md.
-- Document the lossy fields (e.g. `allowed-tools` doesn't survive the trip to AGENTS.md).
-- **One adapter, many hosts** — because AGENTS.md is the broadly-supported standard, not just Codex.
+# Push a skill to it
+skillctl push demo-skill --to git@github.com:your-org/team-skills.git
 
-**Deliverable:** non-Claude-Code users on the team can consume the same shared skills. Tells us how lossy the AGENTS.md bridge is in practice.
+# On a teammate's machine
+skillctl ls   git@github.com:your-org/team-skills.git    # see what's there
+skillctl pull demo-skill@team-skills                     # materializes via rulesync
+ls ~/.codex/skills/demo-skill                            # appeared
+```
 
-## Iteration 5 — Base + overlay composition (3–5 days)
+## Iteration 3 — LLM-assisted merge driver (2–3 days)
 
-- Each user can keep `~/.claude/skill-overlays/<skill>.overlay.md` with section-level overrides: `replace`, `append`, `disable`.
-- On `pull`, base and overlay are kept separate; on activation (or via a `skillctl materialize` step) they're combined into the on-disk SKILL.md that Claude Code actually reads.
-- `skillctl pull` updates the base; the overlay survives.
+- Register a custom git merge driver via `.gitattributes` for `**/SKILL.md`. `skillctl init-merge-driver` writes the `.gitattributes` and `.git/config` entries.
+- On conflict, call Claude with `(base, ours, theirs)` and a prompt-cached system instruction: "merge these three versions of an AI skill, preserving both authors' intent; output the merged markdown only." Write the result with a `<!-- SKILLCTL: review required -->` marker so the user can't merge without looking.
+- `skillctl merge <skill>` does the same on demand without going through git.
+- **No section schema. No structural diff.** Just `(base, ours, theirs)` → LLM → reviewed candidate. If output quality is poor, that's the signal to revisit a structured approach (parked in [consider-for-later.md](./consider-for-later.md)).
 
-**Deliverable:** people can adopt a shared skill while keeping personal tweaks. Tells us whether overlay is the right model or whether forks-with-rebase would be simpler.
+**Deliverable:** real concurrent-edit story. Tells us whether the LLM merge output is good enough for the team to trust.
 
-## Stretch (post-feedback)
+### Try it out
 
-- `skillctl new --from-transcript`: generate a skill from a Claude Code session transcript.
-- `skillctl refactor <skill>`: agent that improves progressive disclosure, splits oversized skills, externalizes examples.
-- VS Code extension surface for `list` / `pull` / `diff`.
-- First-party Cursor / Continue host adapters (beyond what AGENTS.md export covers).
-- Cross-marketplace lockfile (`skillctl.lock`) pinning sources across Claude Code plugins, Cursor plugins, Continue Hub, raw GitHub Skills repos.
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+cd team-skills && skillctl init-merge-driver
+
+# Simulate a conflict on demo-skill
+git checkout -b alice
+printf '\nAlice added this line.\n' >> plugins/demo-skill/SKILL.md
+git commit -am alice
+
+git checkout main && git checkout -b bob
+printf '\nBob added a different line here.\n' >> plugins/demo-skill/SKILL.md
+git commit -am bob
+
+git merge alice                                          # driver runs Claude
+cat plugins/demo-skill/SKILL.md                          # merged + review marker
+```
+
+## Stretch / deferred
+
+Almost everything that used to live in "stretch" has moved to [consider-for-later.md](./consider-for-later.md). The prototype's scope is iter-0 through iter-3. Anything beyond that — including support for tools other than Codex CLI — needs an explicit re-scoping decision.
+
+## What we explicitly cut from earlier drafts (and why)
+
+- **AGENTS.md export iteration:** delegated to rulesync. No code from us.
+- **Public/private marketplace split + visibility guard (was iter-2):** deferred — pilot uses only private repos. See [consider-for-later.md](./consider-for-later.md).
+- **Overlay iteration:** deferred. See [consider-for-later.md](./consider-for-later.md).
+- **Section schema:** dropped. We use agentskills.io SKILL.md unchanged. See [skill-schema.md](./skill-schema.md).
+- **Claude Code support in v1:** deferred. Codex CLI only for the prototype. See [consider-for-later.md](./consider-for-later.md).
 
 ---
 
@@ -75,7 +126,8 @@ See [problem-statement.md](./problem-statement.md) for context and [decisions.md
 
 ```
 skill-sharing/
-├── pyproject.toml
+├── package.json
+├── tsconfig.json
 ├── README.md
 ├── docs/
 │   ├── problem-statement.md
@@ -83,122 +135,40 @@ skill-sharing/
 │   ├── prior-art.md
 │   ├── iteration-plan.md
 │   ├── skill-schema.md
-│   └── research-brief.md
-├── skillctl/
-│   ├── __init__.py
-│   ├── cli.py                   # Typer entry point
-│   ├── hosts.py                 # path registries per host
-│   ├── inventory.py             # iter 1: list/show
-│   ├── marketplace.py           # iter 2: push/pull, marketplace.json IO
-│   ├── visibility.py            # iter 2: pre-push guard
-│   ├── schema.py                # iter 0/3: frontmatter + section parsing
-│   ├── merge.py                 # iter 3: section diff + LLM 3-way merge
-│   ├── codex.py                 # iter 4: AGENTS.md adapter
-│   ├── overlay.py               # iter 5: base + overlay
-│   └── llm.py                   # thin wrapper over anthropic SDK, prompt cache enabled
-├── tests/
+│   ├── consider-for-later.md
+│   ├── rulesync-evaluation.md
+│   ├── ai-rules-sync-evaluation.md
+│   ├── research-brief.md
+│   └── deep-research-report.md
+├── src/
+│   ├── cli.ts                   # commander entry point
+│   ├── hosts.ts                 # path registry — Codex CLI only for the prototype
+│   ├── inventory.ts             # iter 1: list/show
+│   ├── marketplace.ts           # iter 2: ls/pull/push, marketplace.json IO
+│   ├── substrate.ts             # rulesync wrapper (iter 0+)
+│   ├── merge.ts                 # iter 3: LLM 3-way merge
+│   └── llm.ts                   # @anthropic-ai/sdk wrapper, prompt cache enabled
+├── test/
 └── examples/
-    ├── public-skill/
-    └── proprietary-skill/
+    ├── example-skill-a/
+    └── example-skill-b/
 ```
 
 ## Verification plan
 
-Each iteration ends with two complementary checks:
+Each iteration has a **"Try it out"** block. That block is the definition of done:
+the iteration is not complete until those commands run cleanly on a fresh checkout.
+**Claude should execute the "Try it out" block in the sandbox** at the end of each
+iteration and report the results before declaring it done.
 
-1. **pytest** — automated unit/integration tests that run in CI.
-2. **Sandbox smoke test** — Claude exercises the CLI end-to-end in the dev
-   environment, creates real fixture files, and confirms the golden path and
-   key edge cases behave correctly. Results are recorded below as each
-   iteration is completed.
+- **Iter 0:** team eyeballs the rulesync round-trip on the example skills. Confirm the substrate produces what the user expects in `.codex/skills/`.
+- **Iter 1:** every team member runs `skillctl list` on their machine; we confirm coverage of Codex paths matches reality (any missing path is a bug).
+- **Iter 2:** stand up `team-skills` (private) and round-trip a real skill end-to-end. `skillctl ls team-skills` shows it; `skillctl pull` materializes it via rulesync; `skillctl push` puts a new version back.
+- **Iter 3:** seed a real conflict (two team members edit the same skill differently), let the merge driver run, hand the result to a third reviewer who wasn't involved in the edits — they should be able to adjudicate quickly.
 
-### Iter 0 — Schema parser
+## Open questions (re-confirm at each iteration boundary)
 
-*pytest:* schema parser round-trips, section-ID extraction, edge cases.
-
-*Sandbox smoke test:*
-- Parse both `examples/` skills via the Python API; print name, visibility,
-  section headings.
-- Verify `skillctl --help`, `skillctl list` (stub), and `skillctl show` (stub)
-  exit cleanly.
-- Confirm `dump_skill(parse_skill(text)) == parse_skill(dump_skill(…))` holds
-  on both example files (idempotent round-trip).
-
-### Iter 1 — `skillctl list` / `skillctl show`
-
-*pytest:* inventory walker finds skills at mocked paths; missing dirs are
-skipped cleanly; `show` renders correct output.
-
-*Sandbox smoke test:*
-- Plant a skill file at `~/.claude/skills/test-skill/SKILL.md` and one at
-  `.claude/skills/project-skill/SKILL.md` in a temp project dir.
-- Run `skillctl list`; verify both rows appear with correct host, scope, and
-  visibility columns.
-- Run `skillctl show test-skill`; verify full frontmatter + body is printed.
-- Remove the planted files; confirm `skillctl list` shows an empty table
-  rather than crashing.
-
-### Iter 2 — `skillctl push` / `skillctl pull`
-
-*pytest:* marketplace.json IO, visibility guard logic, overwrite-abort
-message, happy-path copy.
-
-*Sandbox smoke test:*
-- `git init` a temp dir as a public marketplace (set `marketplace.visibility:
-  public` in `marketplace.json`).
-- Push `examples/public-skill` to it; confirm the plugin tree and updated
-  `marketplace.json` are committed in the marketplace repo.
-- Pull it back to a fresh location; confirm the skill file appears.
-- Attempt to push `examples/proprietary-skill` to the public marketplace;
-  confirm the guard refuses with a clear error.
-- Attempt a second pull to the same location (overwrite scenario); confirm
-  the abort message fires.
-
-### Iter 3 — Section-aware diff + LLM 3-way merge
-
-*pytest:* section diff identifies correct changed sections; same-side-only
-changes are auto-resolved; both-sides conflicts route to `llm.merge` (mocked
-in tests).
-
-*Sandbox smoke test:*
-- Create a base skill and two diverged variants (edit `## Procedure` in one,
-  `## Examples` in the other; edit `## Purpose` in both).
-- Run `skillctl diff`; confirm output shows only the changed sections.
-- Run `skillctl merge`; confirm `## Procedure` and `## Examples` are
-  auto-resolved and only `## Purpose` is handed to Claude for a merge
-  candidate.
-- Inspect the `.merged.md` output for coherence.
-
-### Iter 4 — AGENTS.md export
-
-*pytest:* Claude-specific frontmatter keys stripped; sections flattened to
-prose; output is valid markdown.
-
-*Sandbox smoke test:*
-- Export both example skills with `skillctl export --as agents-md`.
-- Confirm `allowed-tools`, `visibility`, `depends_on`, `origin` are absent
-  from the output.
-- Confirm section headings are rendered as prose paragraphs (no H2s with
-  schema names).
-- Copy the output into a temp `AGENTS.md` in a fresh dir; confirm a
-  `skillctl list` run with the Codex host adapter picks it up.
-
-### Iter 5 — Base + overlay composition
-
-*pytest:* overlay `replace`/`append`/`disable` directives applied correctly;
-base update preserves overlay; materialize output matches expectation.
-
-*Sandbox smoke test:*
-- Pull a base skill; write an overlay that replaces `## Procedure` and
-  appends to `## When to use`.
-- Run `skillctl materialize`; confirm the output contains the replaced
-  procedure and the appended when-to-use, with all other sections from base.
-- Simulate a base update (edit base file); re-materialize; confirm overlay
-  still applies and the updated base sections flow through.
-
-## Open questions (recommendations, to be re-confirmed at each iteration boundary)
-
-- **Unit pushed to marketplace:** single-skill plugin (lean, every skill is a plugin) vs. named bundle (logical grouping). **Recommend single-skill plugins in v1.**
-- **Common base for 3-way merge:** store the last-pulled version of every shared skill under `~/.cache/skillctl/base/<marketplace>/<skill>.md` so a base always exists.
-- **Server-side visibility check:** add a small GitHub Action on the public marketplace that fails the build if any `visibility: proprietary` slips through. Defense in depth alongside the client-side pre-push guard.
-- **Conformance target for SKILL.md:** write skills to the cross-tool **agentskills.io spec** (not Claude Code's superset) so they portably install on Codex/others without extra translation. Claude Code-specific frontmatter keys live in an optional namespace.
+- **Is `skillctl list` actually wanted?** If the team skips straight to `pull`, Iter 1 is busywork.
+- **Is `skillctl ls <marketplace>` worth a discrete command, or should `list --remote` cover it?** Decide in iter-2.
+- **Unit pushed to marketplace:** single-skill plugin (lean) vs. named bundle (logical grouping). **Default: single-skill plugins.**
+- **Stop conditions.** If Anthropic / OpenAI / GitHub / rulesync ships the equivalent of any iteration before we land it, we abandon and adopt. This is a feature, not a failure.

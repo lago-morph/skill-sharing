@@ -1,10 +1,28 @@
 # skill-sharing
 
-A design effort for `skillctl` — a TypeScript CLI that helps a small team inventory, share, and merge AI agent skills. The prototype targets **Codex CLI only**; broader tool support (Claude Code, Cursor, Copilot, …) is deferred and largely a config change once the Codex flow is proven, since rulesync handles fan-out.
+A TypeScript CLI (`skillctl`) that helps a small team inventory, share, and merge AI agent skills. The prototype targets **Codex CLI only**; broader tool support (Claude Code, Cursor, Copilot, …) is deferred and largely a config change once the Codex flow is proven, since rulesync handles fan-out.
 
 > **This is an internal prototype**, not a commercial product. Built for a 4-person pilot team (potentially rolling out to ~30 people if useful), open-sourced for transparency. We will throw it away cheerfully if upstream tools (`rulesync`, first-party skills, etc.) absorb the use case mid-flight.
 
-This repo is currently in the **design phase**. No code yet.
+## Try it out — Iteration 0
+
+Clone the repo, install dependencies, and run the smoke test to confirm the rulesync substrate works on your machine:
+
+```bash
+git clone <repo-url> && cd skill-sharing
+npm install
+npm run smoke
+```
+
+Expected output:
+
+```
+Copied examples/write-commit-message → .rulesync/skills/write-commit-message
+Running rulesync generate --targets codexcli --features skills...
+✓  .codex/skills/write-commit-message/ exists — rulesync round-trip works.
+```
+
+Each iteration adds a new "Try it out" block here as it ships. The current iteration is **Iteration 0 — scaffolding**. See [`docs/iteration-plan.md`](docs/iteration-plan.md) for what's coming next and how to give feedback.
 
 > **AI assistants:** start at [`AGENTS.md`](AGENTS.md). It tells you how to find "the next thing" and what's in/out of scope.
 

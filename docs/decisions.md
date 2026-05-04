@@ -1,28 +1,39 @@
 # Design decisions
 
-Decisions locked in after the first brainstorming pass. Each is reversible — but reversing one will reshape the iteration plan, so do it deliberately.
+> **Intent:** this is an **internal prototype**, not a commercial product. Audience is one 4-person pilot team, with possible rollout to ~30 people if it proves useful. The project is open source for transparency, but the goal is to **relieve a known team's immediate pain**. We expect to throw it away cheerfully if upstream tools (rulesync, first-party skills, etc.) absorb the use case mid-flight.
+
+Decisions locked in after the first brainstorming pass, the deep-research review, and the rulesync / ai-rules-sync evaluations. Each is reversible — but reversing one will reshape the iteration plan, so do it deliberately.
 
 | # | Decision | Rationale | Alternatives considered |
 |---|---|---|---|
-| 1 | **Audience: individuals / small groups** in v1. | Git remotes alone are sufficient; no registry server, no auth beyond git. Fastest path to a usable tool for a 4-person team. | Teams/orgs (would imply registry service + review workflow); open-source community (would imply hosted index, ratings). |
-| 2 | **Cross-tool from day one: Claude Code + Codex.** | Half the team uses each; locking in to one would invalidate the design quickly. AGENTS.md is a real cross-tool standard that makes the second host cheap. | Claude Code first, adapters later; truly host-neutral (Cursor/IDEs from day one). |
-| 3 | **Merge model: section schema + LLM 3-way merge** for same-section conflicts. | Section schema makes most prose merges conflict-free without LLM cost; LLM merge handles the residual same-section cases with a human review gate. Builds directly on git. | Section schema only (worse UX for prose conflicts); structured AST (best mergeability but breaks markdown ergonomics and existing skills). |
-| 4 | **Visibility: two marketplaces + pre-push guard.** Frontmatter `visibility: public | proprietary`. | Cheap, deterministic, and matches how teams already separate public/private repos. Defers RBAC entirely. | Single marketplace with encrypted proprietary entries (adds key management); defer proprietary to v2 (forces awkward workarounds in v1). |
-| 5 | **Implementation language: Python.** | Strong fit for LLM tooling, markdown/YAML processing, and the team's existing skillset. Pip distribution is acceptable for a 4-person internal tool. | TypeScript/Node (aligns with Claude Code itself); Go (single static binary). |
-| 6 | **Pace: small iterations, each useful on its own.** | The vision will change as the team uses it. Each iteration is shippable; we hold a 30-min retro between iterations to scope the next. | Full vision in v1 (larger surface, slower feedback). |
+| 1 | **Audience: one 4-person pilot team, then maybe 30 people. Internal prototype, not a product.** | We're solving a known team's pain. No need to design for unknown users. Stop building if upstream absorbs the use case. | Open-source community (would force RBAC, hosted index, broader compat); ship as a product (would force funded discovery, marketing). |
+| 2 | **Build on `rulesync` as substrate** for cross-tool fan-out and AGENTS.md export — wrapped behind a single `src/substrate.ts` for swap-out. | Real TypeScript programmatic API, ~25 supported hosts, dual ESM/CJS, types shipped. ai-rules-sync was evaluated and rejected (CLI-only, no Node API, idle since 2026-03). See [rulesync-evaluation.md](./rulesync-evaluation.md) and [ai-rules-sync-evaluation.md](./ai-rules-sync-evaluation.md). | Reinvent fan-out (busywork); ai-rules-sync (lacks API, dormant); skip cross-tool entirely (forces team to pick one assistant). |
+| 3 | **Initial pilot scope: Codex CLI only.** Other tools deferred. | Smaller surface area to prove the iter-1/2/3 workflow. rulesync supports adding `claudecode` (and ~25 others) later as a config change in `src/substrate.ts` and a few extra paths in `hosts.ts`. | Claude Code + Codex from day one (more surface to debug; the Claude plugin/marketplace flow adds complexity); ship Claude-Code-only first (excludes the half of the team on Codex). |
+| 4 | **Merge model: LLM 3-way merge with human review. No section schema, no structured AST.** | Section schemas tax authors with structure they wouldn't otherwise write. The deep-research report found no clear evidence the structure pays off for prose. An LLM call on conflict is "dumb but cheap" and stays out of the author's way. | Section-aware schema (premature; deferred — see [consider-for-later.md](./consider-for-later.md)); structured AST (kills authoring ergonomics); ship without merge (leaves Pain 2 unsolved). |
+| 5 | **Pilot uses private repositories only. No public/private split, no visibility frontmatter, no pre-push guard.** | Without a public surface there is nothing to leak. The visibility model and dual-marketplace design are deferred — see [consider-for-later.md](./consider-for-later.md). | Two marketplaces + visibility guard from day one (bloats iter-2; solves a non-problem for the pilot). |
+| 6 | **Implementation language: TypeScript.** | Aligns with rulesync (Node), the Claude Code ecosystem, and the Anthropic TS SDK. One runtime per teammate's machine instead of two. | Python (the prior call; switched once we settled on rulesync as substrate). |
+| 7 | **Pace: small iterations, each useful on its own. Throwaway-ready.** | Vision will change as the team uses it. If a better solution ships mid-flight, we should be able to abandon any iteration without sunk-cost panic. | Full vision in v1 (slower, harder to abandon). |
 
-## Out of scope for v1
+## Out of scope for the prototype
 
-- **RBAC, sub-teams, fine-grained access controls.** Public/proprietary is enough granularity for a 4-person team.
-- **A registry server or hosted UI.** Git is the substrate.
-- **Cursor / VS Code / IDE-specific adapters.** AGENTS.md export covers most of these passively in iteration 4; first-party adapters are stretch.
-- **Automatic skill generation in v1.** `--from-transcript` and `refactor` are stretch goals after iteration 5.
+See [consider-for-later.md](./consider-for-later.md) for the parked features and the trigger conditions that would justify revisiting them. Highlights that don't get built unless the pilot demands it:
+
+- Public/private marketplace split, `visibility:` frontmatter, pre-push guards.
+- Section schema, stable IDs, structure-aware merge.
+- Provenance / registry / catalog metadata.
+- Overlay / base+override composition.
+- RBAC, sub-teams, fine-grained access controls.
+- Registry server or hosted UI.
+- Skill generation tools (`--from-transcript`, `refactor`).
+- VS Code / IDE surfaces.
+- **Support for tools other than Codex CLI** (Claude Code, Cursor, Copilot, …).
 
 ## Things we are explicitly building on (not reinventing)
 
-- **Claude Code plugin/marketplace format** (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`) as the on-disk and on-git bundle.
-- **Agent Skills specification** (`agentskills.io/specification`) as the cross-tool SKILL.md conformance target.
-- **AGENTS.md** (`agents.md`) as the universal export format for non-Claude hosts.
-- **Existing Python libs**: `python-frontmatter`, `marko`, `merge3`, `GitPython`, `anthropic` SDK, `typer`.
+- **`rulesync`** — multi-tool fan-out and AGENTS.md export, wrapped behind one source file for isolation.
+- **Claude Code plugin/marketplace format** (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`) — on-disk and on-git bundle.
+- **Agent Skills specification** (`agentskills.io/specification`) — SKILL.md format conformance, used unmodified.
+- **AGENTS.md** — universal export target, handled by rulesync.
+- **TypeScript libs:** `@anthropic-ai/sdk`, `gray-matter` (frontmatter), `simple-git`, `commander` (CLI).
 
 See [prior-art.md](./prior-art.md) for the landscape these choices are positioned against.

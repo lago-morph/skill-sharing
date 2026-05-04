@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# rulesync working directories (written by smoke test and skillctl pull)
+.rulesync/
+.codex/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Test artifacts
+*.tmp/
+
+# Python build artifacts (from prior iteration)
+*.egg-info/
+__pycache__/
+*.pyc

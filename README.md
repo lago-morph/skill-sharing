@@ -1,6 +1,6 @@
 # skill-sharing
 
-A design effort for `skillctl` — a TypeScript CLI that helps a small team inventory, share, and merge AI agent skills across multiple coding-assistant platforms (Claude Code, Codex, Cursor, Aider, …).
+A design effort for `skillctl` — a TypeScript CLI that helps a small team inventory, share, and merge AI agent skills. The prototype targets **Codex CLI only**; broader tool support (Claude Code, Cursor, Copilot, …) is deferred and largely a config change once the Codex flow is proven, since rulesync handles fan-out.
 
 > **This is an internal prototype**, not a commercial product. Built for a 4-person pilot team (potentially rolling out to ~30 people if useful), open-sourced for transparency. We will throw it away cheerfully if upstream tools (`rulesync`, first-party skills, etc.) absorb the use case mid-flight.
 

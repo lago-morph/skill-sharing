@@ -12,6 +12,14 @@ This document holds enterprise-type features and ambitions that the deep-researc
 
 ---
 
+## Support for tools other than Codex CLI
+
+The prototype targets Codex CLI only. rulesync's `claudecode` target handles `~/.claude/skills/`, `.claude/skills/`, and Claude plugin formats; adding it later is largely a `--targets claudecode,codexcli` config change in `src/substrate.ts` plus extending `hosts.ts` with the additional skill paths. Other rulesync targets (Cursor, Copilot, Gemini, etc.) follow the same pattern — see [rulesync-evaluation.md](./rulesync-evaluation.md) for the full list.
+
+**Why deferred:** smaller surface area for the iter-1/2/3 prove-out. Claude Code's plugin/marketplace format in particular adds bundling complexity (plugin.json, marketplace.json install flow) that we can defer until the simpler Codex flow is validated.
+
+**Trigger for re-scoping:** the Codex flow is proven and pilot members on Claude Code (or another tool) want in. Adding a host should be hours, not days.
+
 ## Public / private marketplace split, visibility frontmatter, pre-push guard
 
 The original design had two marketplaces — one public, one private — and a `visibility:` frontmatter key with a pre-push guard. Parked.

@@ -30,10 +30,10 @@ Some skills are fine to share publicly; others encode internal practice and must
 
 A TypeScript CLI plus a small set of conventions, building on `rulesync` for cross-tool fan-out, that:
 
-- Inventories skills across all known hosts on a machine (`skillctl list`).
+- Inventories Codex skills on a machine (`skillctl list`).
 - Lists what's available in a private git-backed marketplace (`skillctl ls <marketplace>`).
 - Pulls/pushes skills to/from that marketplace.
 - Merges concurrent edits by handing `(base, ours, theirs)` to an LLM and asking the user to review the result. No section schema, no structured AST.
-- Bundles each skill with its MCP/tool dependencies via the existing Claude Code plugin format; AGENTS.md fan-out is delegated to rulesync.
+- Bundles each skill with its MCP/tool dependencies via the existing Claude Code plugin format (used as a metadata convention; Codex doesn't read it); AGENTS.md and other-tool fan-out are delegated to rulesync.
 
-V1 is intentionally small. We ship in increments a 4-person team can actually use and react to. Anything that doesn't address pains 1–4 above is out of scope; pain 5 is deferred — see [`consider-for-later.md`](./consider-for-later.md).
+V1 is intentionally small. **The prototype targets Codex CLI only**; Claude Code and other tools are deferred — see [`consider-for-later.md`](./consider-for-later.md). We ship in increments a 4-person team can actually use and react to. Anything that doesn't address pains 1–4 above is out of scope; pain 5 is also deferred.

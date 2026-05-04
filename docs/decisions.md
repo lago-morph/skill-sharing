@@ -8,7 +8,7 @@ Decisions locked in after the first brainstorming pass, the deep-research review
 |---|---|---|---|
 | 1 | **Audience: one 4-person pilot team, then maybe 30 people. Internal prototype, not a product.** | We're solving a known team's pain. No need to design for unknown users. Stop building if upstream absorbs the use case. | Open-source community (would force RBAC, hosted index, broader compat); ship as a product (would force funded discovery, marketing). |
 | 2 | **Build on `rulesync` as substrate** for cross-tool fan-out and AGENTS.md export — wrapped behind a single `src/substrate.ts` for swap-out. | Real TypeScript programmatic API, ~25 supported hosts, dual ESM/CJS, types shipped. ai-rules-sync was evaluated and rejected (CLI-only, no Node API, idle since 2026-03). See [rulesync-evaluation.md](./rulesync-evaluation.md) and [ai-rules-sync-evaluation.md](./ai-rules-sync-evaluation.md). | Reinvent fan-out (busywork); ai-rules-sync (lacks API, dormant); skip cross-tool entirely (forces team to pick one assistant). |
-| 3 | **Cross-tool from day one: Claude Code + Codex.** | Half the team uses each. Cheap because rulesync handles tool-specific paths. | Claude-Code-only first, host-neutral later. |
+| 3 | **Initial pilot scope: Codex CLI only.** Other tools deferred. | Smaller surface area to prove the iter-1/2/3 workflow. rulesync supports adding `claudecode` (and ~25 others) later as a config change in `src/substrate.ts` and a few extra paths in `hosts.ts`. | Claude Code + Codex from day one (more surface to debug; the Claude plugin/marketplace flow adds complexity); ship Claude-Code-only first (excludes the half of the team on Codex). |
 | 4 | **Merge model: LLM 3-way merge with human review. No section schema, no structured AST.** | Section schemas tax authors with structure they wouldn't otherwise write. The deep-research report found no clear evidence the structure pays off for prose. An LLM call on conflict is "dumb but cheap" and stays out of the author's way. | Section-aware schema (premature; deferred — see [consider-for-later.md](./consider-for-later.md)); structured AST (kills authoring ergonomics); ship without merge (leaves Pain 2 unsolved). |
 | 5 | **Pilot uses private repositories only. No public/private split, no visibility frontmatter, no pre-push guard.** | Without a public surface there is nothing to leak. The visibility model and dual-marketplace design are deferred — see [consider-for-later.md](./consider-for-later.md). | Two marketplaces + visibility guard from day one (bloats iter-2; solves a non-problem for the pilot). |
 | 6 | **Implementation language: TypeScript.** | Aligns with rulesync (Node), the Claude Code ecosystem, and the Anthropic TS SDK. One runtime per teammate's machine instead of two. | Python (the prior call; switched once we settled on rulesync as substrate). |
@@ -26,6 +26,7 @@ See [consider-for-later.md](./consider-for-later.md) for the parked features and
 - Registry server or hosted UI.
 - Skill generation tools (`--from-transcript`, `refactor`).
 - VS Code / IDE surfaces.
+- **Support for tools other than Codex CLI** (Claude Code, Cursor, Copilot, …).
 
 ## Things we are explicitly building on (not reinventing)
 

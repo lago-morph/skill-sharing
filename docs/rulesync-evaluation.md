@@ -2,7 +2,11 @@
 
 > **Status: adopted as substrate.** See [decisions.md](./decisions.md) row 2.
 >
-> **Note for current planning.** This evaluation was written when `visibility:` frontmatter was an active design feature. It has since been deferred to [consider-for-later.md](./consider-for-later.md) — the pilot uses only private repositories. Any references below to a `visibility:` test in iter-0 should be read as relevant *if and when* visibility is revived. The architectural recommendations (wrap rulesync behind `src/substrate.ts`, treat its frontmatter schema as foreign, plan for swap-out) still apply.
+> **Note for current planning.** Two things in this doc are stale-by-design and should be read in context:
+> 1. **Codex CLI only for the prototype.** Sections below mention `--targets claudecode,codexcli`. The initial scope is `--targets codexcli` only; Claude Code and other tools are deferred to [consider-for-later.md](./consider-for-later.md).
+> 2. **`visibility:` frontmatter is deferred.** This evaluation was written when it was an active feature. Any reference to a `visibility:` test in iter-0 is relevant only if/when visibility is revived.
+>
+> The architectural recommendations (wrap rulesync behind `src/substrate.ts`, treat its frontmatter schema as foreign, plan for swap-out) still apply.
 
 > **Question:** can [`rulesync`](https://github.com/dyoshikawa/rulesync) be the substrate for `skillctl`, or do we need to keep it at arm's length?
 >

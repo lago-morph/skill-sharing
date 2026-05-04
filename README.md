@@ -6,6 +6,8 @@ A design effort for `skillctl` — a TypeScript CLI that helps a small team inve
 
 This repo is currently in the **design phase**. No code yet.
 
+> **AI assistants:** start at [`AGENTS.md`](AGENTS.md). It tells you how to find "the next thing" and what's in/out of scope.
+
 ## Documents
 
 ### Planning (in scope)
